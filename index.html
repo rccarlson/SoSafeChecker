@@ -207,13 +207,15 @@
 
                 // Extract domains from links
                 const domains = links.map(link => {
-                    try {
-                        return new URL(link).hostname;
-                    } catch {
-                        return null;
-                    }
-                }).filter(domain => domain).reduce((unique, domain) => 
-                    unique.includes(domain) ? unique : [...unique, domain], []);
+                        try {
+                            return new URL(link).hostname;
+                        } catch {
+                            return null;
+                        }
+                    })
+                    .filter(domain => domain)
+                    .map(domain => getRootDomain(domain))
+                    .reduce((unique, domain) => unique.includes(domain) ? unique : [...unique, domain], []);
 
                 // Perform DNS TXT record lookup for each domain
                 // Helper to get root domain (e.g., example.com from abc.example.com)
@@ -221,22 +223,13 @@
                 if (subject.length > 20) {
                     subject = subject.slice(0, 20) + '...';
                 }
+                
                 function getRootDomain(domain) {
                     const parts = domain.split('.');
                     if (parts.length >= 2) {
                         return parts.slice(-2).join('.');
                     }
                     return domain;
-                }
-
-                // Set to avoid duplicate checks
-                const domainsToCheck = new Set();
-                for (const domain of domains) {
-                    domainsToCheck.add(domain);
-                    const root = getRootDomain(domain);
-                    if (root !== domain) {
-                        domainsToCheck.add(root);
-                    }
                 }
 
                 async function checkDomain(domain) {
@@ -265,7 +258,7 @@
                 // Get the "From" field (sender)
                 const from = (msgData.senderEmail || msgData.senderName || msgData.sender || '(Unknown sender)');
 
-                for (const domain of domainsToCheck) {
+                for (const domain of domains) {
                     if (await checkDomain(domain)) {
                         resultDiv.textContent = `"${subject}" from "${from}" is from SoSafe`;
                         resultDiv.classList.add('sosafe-result');
