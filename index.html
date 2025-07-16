@@ -260,13 +260,13 @@
 
                 for (const domain of domains) {
                     if (await checkDomain(domain)) {
-                        resultDiv.textContent = `"${subject}" from "${from}" is from SoSafe`;
+                        resultDiv.textContent = `"${subject}" from "${from}" is a SoSafe phishing email`;
                         resultDiv.classList.add('sosafe-result');
                         return;
                     }
                 }
 
-                resultDiv.textContent = `"${subject}" from "${from}" is not from SoSafe`;
+                resultDiv.textContent = `"${subject}" from "${from}" is not a SoSafe phishing email`;
                 resultDiv.classList.remove('sosafe-result');
             } catch (error) {
                 resultDiv.textContent = 'Error processing .msg file';
