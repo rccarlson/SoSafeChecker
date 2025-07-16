@@ -92,7 +92,11 @@
     <div style="margin-bottom: 18px; font-size: 1.2em; font-weight: bold; text-align: center;">Check if an email is a SoSafe phishing email</div>
     <div id="dropZone">Drag and drop your email here</div>
     <div id="result"></div>
-    <div id="privacyNote">All processing is done locally in your browser and never leaves your device or is sent anywhere.</div>
+    <div id="privacyNote">
+        All processing is done locally in your browser.
+        <br/>
+        Domains from links in your email are checked against <a href="https://dns.google">Google's DNS lookup</a> to determine if they are associated with SoSafe.
+    </div>
     <div class="toggle-switch">
         <label for="darkModeToggle">Dark Mode</label>
         <input type="checkbox" id="darkModeToggle" checked>
