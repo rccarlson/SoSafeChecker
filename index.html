@@ -155,10 +155,6 @@
                     links = body.match(linkRegex) || [];
                 }
 
-                if (links.length === 0) {
-                    resultDiv.textContent = 'No links found in the .msg file';
-                    return;
-                }
 
                 // Extract domains from links
                 const domains = links.map(link => {
