@@ -58,6 +58,17 @@
             text-align: center;
             max-width: 300px;
         }
+        #privacyNote a {
+            color: #3584a8;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+        #privacyNote a:visited {
+            color: #3b5366;
+        }
+        #privacyNote a:hover {
+            color: #fff;
+        }
         .toggle-switch {
             position: absolute;
             top: 20px;
@@ -85,6 +96,15 @@
         }
         body.light-mode #privacyNote {
             color: #555;
+        }
+        body.light-mode #privacyNote a {
+            color: #082746;
+        }
+        body.light-mode #privacyNote a:visited {
+            color: #512da8;
+        }
+        body.light-mode #privacyNote a:hover {
+            color: #000;
         }
     </style>
 </head>
