@@ -106,10 +106,36 @@
         body.light-mode #privacyNote a:hover {
             color: #000;
         }
+        #scaryWarning {
+            background: #50212c;
+            color: #ffeaea;
+            font-weight: 500;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 0 8px 1px #ff1744a0;
+            text-align: center;
+            max-width: 420px;
+            border: 1.5px solid #a13a4a;
+            font-size: 1em;
+            transition: background 0.3s, color 0.3s, border 0.3s;
+            opacity: 0.93;
+        }
+        body.light-mode #scaryWarning {
+            background: #e4b3b3;
+            color: #6a1a1a;
+            border: 1.5px solid #e0b2b2;
+            box-shadow: 0 0 8px 1px #ff174420;
+        }
     </style>
 </head>
 <body>
     <div style="margin-bottom: 18px; font-size: 1.2em; font-weight: bold; text-align: center;">Check if an email is a SoSafe phishing email</div>
+    <div id="scaryWarning">
+        ⚠️ <b>Notice:</b> This tool <u>does NOT check if an email is an actual phishing email</u>.<br>
+        It only checks if the email is a <b>test phishing email sent by SoSafe</b>.<br>
+        Do <u>not</u> rely on this tool to determine if an email is safe!
+    </div>
     <div id="dropZone">Drag and drop your email here</div>
     <div id="result"></div>
     <div id="privacyNote">
