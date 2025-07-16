@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSG File Link Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #181a1b;
+            color: #f0f0f0;
+            transition: background 0.3s, color 0.3s;
+        }
+        #dropZone {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #23272a;
+            color: #f0f0f0;
+            cursor: pointer;
+        }
+        #dropZone.dragover {
+            background-color: #e1e1e1;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            transition: box-shadow 0.3s, border 0.3s, background 0.3s;
+        }
+        .sosafe-result {
+            border: 3px solid #ff1744;
+            box-shadow: 0 0 10px 2px #ff1744;
+            background: #3a0008;
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px 16px;
+            animation: sosafePulse 0.7s;
+        }
+        @keyframes sosafePulse {
+            0% { box-shadow: 0 0 0 0 #ff1744; }
+            70% { box-shadow: 0 0 10px 6px #ff1744; }
+            100% { box-shadow: 0 0 10px 2px #ff1744; }
+        }
+        #privacyNote {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+            max-width: 300px;
+        }
+        .toggle-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toggle-switch input[type="checkbox"] {
+            width: 40px;
+            height: 20px;
+            accent-color: #4caf50;
+        }
+        body.light-mode {
+            background-color: #f0f0f0;
+            color: #181a1b;
+        }
+        body.light-mode #dropZone {
+            background-color: #fff;
+            color: #181a1b;
+            border: 2px dashed #333;
+        }
+        body.light-mode #dropZone.dragover {
+            background-color: #e1e1e1;
+        }
+        body.light-mode #privacyNote {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="dropZone">Drag and drop your email here</div>
+    <div id="result"></div>
+    <div id="privacyNote">All processing is done locally in your browser and never leaves your device or is sent anywhere.</div>
+    <div class="toggle-switch">
+        <label for="darkModeToggle">Dark Mode</label>
+        <input type="checkbox" id="darkModeToggle" checked>
+    </div>
+
+    <script src="https://ykarpovich.github.io/msg.reader/DataStream.js"></script>
+    <script src="https://ykarpovich.github.io/msg.reader/msg.reader.js"></script>
+    <script>
+        // Dark mode toggle logic
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        // Set dark mode by default
+        body.classList.remove('light-mode');
+        darkModeToggle.checked = true;
+        darkModeToggle.addEventListener('change', () => {
+            if (darkModeToggle.checked) {
+                body.classList.remove('light-mode');
+            } else {
+                body.classList.add('light-mode');
+            }
+        });
+        const dropZone = document.getElementById('dropZone');
+        const resultDiv = document.getElementById('result');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            resultDiv.textContent = 'Processing...';
+
+            const file = e.dataTransfer.files[0];
+            if (!file || !file.name.toLowerCase().endsWith('.msg')) {
+                resultDiv.textContent = 'Please drop a valid .msg file';
+                return;
+            }
+
+            try {
+                // Read file as ArrayBuffer
+                const arrayBuffer = await file.arrayBuffer();
+                const msg = new MSGReader(arrayBuffer);
+                const msgData = msg.getFileData();
+
+                // Extract links from body (HTML or plain text)
+                let links = [];
+                const body = msgData.body || msgData.bodyHTML || '';
+                if (body) {
+                    const linkRegex = /https?:\/\/[^\s<>"']+/g;
+                    links = body.match(linkRegex) || [];
+                }
+
+                if (links.length === 0) {
+                    resultDiv.textContent = 'No links found in the .msg file';
+                    return;
+                }
+
+                // Extract domains from links
+                const domains = links.map(link => {
+                    try {
+                        return new URL(link).hostname;
+                    } catch {
+                        return null;
+                    }
+                }).filter(domain => domain).reduce((unique, domain) => 
+                    unique.includes(domain) ? unique : [...unique, domain], []);
+
+                // Perform DNS TXT record lookup for each domain
+                // Helper to get root domain (e.g., example.com from abc.example.com)
+                let subject = msgData.subject || '(No Subject)';
+                if (subject.length > 20) {
+                    subject = subject.slice(0, 20) + '...';
+                }
+                function getRootDomain(domain) {
+                    const parts = domain.split('.');
+                    if (parts.length >= 2) {
+                        return parts.slice(-2).join('.');
+                    }
+                    return domain;
+                }
+
+                // Set to avoid duplicate checks
+                const domainsToCheck = new Set();
+                for (const domain of domains) {
+                    domainsToCheck.add(domain);
+                    const root = getRootDomain(domain);
+                    if (root !== domain) {
+                        domainsToCheck.add(root);
+                    }
+                }
+
+                async function checkDomain(domain) {
+                    console.log(`Checking domain: ${domain}`);
+                    try {
+                        const response = await fetch(`https://dns.google/resolve?name=${domain}&type=TXT`);
+                        const data = await response.json();
+                        if (data.Answer) {
+                            const txtRecords = data.Answer.filter(record => record.type === 16).map(record => record.data);
+                            console.log(`Domain: ${domain}`);
+                            txtRecords.forEach((record, idx) => {
+                                console.log(`TXT Record ${idx + 1}: ${record}`);
+                            });
+                            if (txtRecords.some(record => record.includes('v=spf1 include:spf.sosafe.de -all'))) {
+                                return true;
+                            }
+                        } else {
+                            console.log(`No TXT records found for ${domain}`);
+                        }
+                    } catch (error) {
+                        console.error(`Error querying DNS for ${domain}:`, error);
+                    }
+                    return false;
+                }
+
+                // Get the "From" field (sender)
+                const from = (msgData.senderEmail || msgData.senderName || msgData.sender || '(Unknown sender)');
+
+                for (const domain of domainsToCheck) {
+                    if (await checkDomain(domain)) {
+                        resultDiv.textContent = `"${subject}" from "${from}" is from SoSafe`;
+                        resultDiv.classList.add('sosafe-result');
+                        return;
+                    }
+                }
+
+                resultDiv.textContent = `"${subject}" from "${from}" is not from SoSafe`;
+                resultDiv.classList.remove('sosafe-result');
+            } catch (error) {
+                resultDiv.textContent = 'Error processing .msg file';
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
