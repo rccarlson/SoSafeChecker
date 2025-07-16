@@ -220,7 +220,7 @@
                 // Perform DNS TXT record lookup for each domain
                 // Helper to get root domain (e.g., example.com from abc.example.com)
                 let subject = msgData.subject || '(No Subject)';
-                if (subject.length > 20) {
+                if (subject.length > 15) {
                     subject = subject.slice(0, 20) + '...';
                 }
                 
